@@ -2,18 +2,18 @@ import { SearchInputFilterKeys } from './index';
 import Fuse from 'fuse.js'
 import {remove as removeDiacritics} from 'diacritics'
 
-function flatten (array) {
-  return array.reduce((flat, toFlatten) => (
+function flatten (array: any[]): any[] {
+  return array.reduce((flat: any, toFlatten:any) => (
     flat.concat(Array.isArray(toFlatten) ? flatten(toFlatten) : toFlatten)
   ), [])
 }
 
-export function getValuesForKey (key, item) {
+export function getValuesForKey (key: string, item: any) {
   const keys = key.split('.')
   let results = [item]
   keys.forEach(_key => {
-    let tmp = []
-    results.forEach(result => {
+    let tmp: any[] = []
+    results.forEach((result): any => {
       if (result) {
         if (result instanceof Array) {
           const index = parseInt(_key, 10)
@@ -47,7 +47,8 @@ interface searchStringsOptions {
   sortResults?: boolean
   normalize?: boolean
 }
-export function searchStrings (strings: string[], term:string, {caseSensitive, fuzzy, sortResults, normalize}: searchStringsOptions = {}) {
+
+export function searchStrings (strings: string[], term:string, {caseSensitive, fuzzy, sortResults, normalize}: searchStringsOptions = {}): boolean {
   strings = strings.map(e => {
     const str = e.toString()
     return normalize && removeDiacritics(str) || str
@@ -62,7 +63,7 @@ export function searchStrings (strings: string[], term:string, {caseSensitive, f
         strings.map(s => { return {id: s} }),
         { keys: ['id'], id: 'id', caseSensitive, shouldSort: sortResults }
       )
-      return fuse.search(term).length
+      return !!fuse.search(term).length
     }
     return strings.some(value => {
       try {
@@ -85,8 +86,9 @@ export function searchStrings (strings: string[], term:string, {caseSensitive, f
 export function createFilter (
   term: string,
   keys: SearchInputFilterKeys,
-  options: any = {}) {
-  return (item) => {
+  options: searchStringsOptions = {}
+) {
+  return (item: any) => {
     if (term === '') { return true }
 
     if (!options.caseSensitive) {
@@ -113,12 +115,12 @@ export function createFilter (
       if (term.indexOf(':') !== -1) {
         const searchedField = term.split(':')[0]
         term = term.split(':')[1]
-        currentKeys = keys.filter(key => key.toLowerCase().indexOf(searchedField) > -1)
+        currentKeys = (keys as string[]).filter(key => key.toLowerCase().indexOf(searchedField) > -1)
       } else {
-        currentKeys = keys
+        currentKeys = keys as string[]
       }
 
-      return currentKeys.some(key => {
+      return (currentKeys).some(key => {
         const values = getValuesForKey(key, item)
         return searchStrings(values, term, options)
       })

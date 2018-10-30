@@ -1,11 +1,11 @@
-import PropTypes from 'prop-types'
 import * as React from 'react'
 import {
   Keyboard,
   TextInput,
   TouchableOpacity,
   View,
-  TextInputProps
+  TextInputProps,
+  EmitterSubscription
 } from 'react-native'
 
 import { createFilter } from './util';
@@ -21,6 +21,7 @@ export interface SearchInputProps extends TextInputProps {
   inputFocus?: boolean;
   inputViewStyles?: Object;
   onChange?: (...args: any[]) => any;
+  onChangeText: Required<TextInputProps>["onChangeText"]
   onSubmitEditing?: (...args: any[]) => any;
   sortResults?: boolean;
   throttle?: number;
@@ -31,7 +32,7 @@ export interface SearchInputState  {
   inputFocus?: boolean
 }
 
-export default class SearchInput extends React.Component<TextInputProps,SearchInputState> {
+export default class SearchInput extends React.Component<SearchInputProps,SearchInputState> {
   static defaultProps = {
     caseSensitive: false,
     clearIcon: null,
@@ -42,7 +43,7 @@ export default class SearchInput extends React.Component<TextInputProps,SearchIn
     throttle: 200
   }
 
-  constructor(props) {
+  constructor(props: SearchInputProps) {
     super(props);
     this.state = {
       searchTerm: this.props.value || '',
@@ -50,6 +51,9 @@ export default class SearchInput extends React.Component<TextInputProps,SearchIn
     }
     this._keyboardDidHide = this._keyboardDidHide.bind(this)
   }
+  keyboardDidHideListener!: EmitterSubscription
+  input!: TextInput
+  _throttleTimeout!: number
 
   componentWillMount() {
     this.keyboardDidHideListener = Keyboard.addListener('keyboardDidHide', this._keyboardDidHide);
@@ -59,7 +63,7 @@ export default class SearchInput extends React.Component<TextInputProps,SearchIn
     this.keyboardDidHideListener.remove();
   }
 
-  componentWillReceiveProps(nextProps) {
+  componentWillReceiveProps(nextProps:SearchInputProps) {
     if (this.state.inputFocus !== nextProps.inputFocus) {
       this.input.focus()
     }
@@ -96,28 +100,32 @@ export default class SearchInput extends React.Component<TextInputProps,SearchIn
   render() {
     const {
       caseSensitive,
+      clearIcon,
+      clearIconViewStyles,
       filterKeys,
       fuzzy,
-      onChange,
+      inputFocus,
+      inputViewStyles,
       sortResults,
-      style,
       throttle,
+      onChange,
+      style,
       value,
       ...inputProps
     } = this.props // eslint-disable-line no-unused-vars
     const { searchTerm } = this.state;
 
-    inputProps.type = inputProps.type || 'search'
-    inputProps.value = searchTerm
-    inputProps.onChange = this.updateSearch.bind(this)
-    inputProps.placeholder = inputProps.placeholder || 'Search'
     return (
       <View style={this.props.inputViewStyles}>
         <TextInput
           style={style}
+          // type={inputProps.type || 'search'}
+          value={searchTerm}
+          onChange={this.updateSearch.bind(this)}
+          placeholder={inputProps.placeholder || 'Search'}
           {...inputProps}  // Inherit any props passed to it; e.g., multiline, numberOfLines below
           underlineColorAndroid={'rgba(0,0,0,0)'}
-          ref={(input) => { this.input = input }}
+          ref={(input) => { this.input = input! }}
           returnKeyType={this.props.returnKeyType}
           onSubmitEditing={this.props.onSubmitEditing}
         />
@@ -126,8 +134,9 @@ export default class SearchInput extends React.Component<TextInputProps,SearchIn
     )
   }
 
-  updateSearch(e) {
+  updateSearch(e:any) {
     const searchTerm = e.target.value
+    const { onChange } = this.props
     this.setState({
       searchTerm: searchTerm
     }, () => {
@@ -136,13 +145,13 @@ export default class SearchInput extends React.Component<TextInputProps,SearchIn
       }
 
       this._throttleTimeout = setTimeout(
-        () => this.props.onChange(searchTerm),
+        () => onChange && onChange(searchTerm),
         this.props.throttle
       )
     })
   }
 
-  filter(keys) {
+  filter(keys: string[]) {
     const { filterKeys, caseSensitive, fuzzy, sortResults } = this.props
     return createFilter(
       this.state.searchTerm,
@@ -150,20 +159,6 @@ export default class SearchInput extends React.Component<TextInputProps,SearchIn
       { caseSensitive, fuzzy, sortResults }
     )
   }
-}
-
-SearchInput.propTypes = {
-  caseSensitive: PropTypes.bool,
-  clearIcon: PropTypes.node,
-  clearIconViewStyles: PropTypes.object,
-  fuzzy: PropTypes.bool,
-  inputFocus: PropTypes.bool,
-  inputViewStyles: PropTypes.object,
-  onChange: PropTypes.func,
-  onSubmitEditing: PropTypes.func,
-  sortResults: PropTypes.bool,
-  throttle: PropTypes.number,
-  value: PropTypes.string,
 }
 
 export { createFilter }
