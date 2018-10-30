@@ -1,3 +1,4 @@
+import { SearchInputFilterKeys } from './index';
 import Fuse from 'fuse.js'
 import {remove as removeDiacritics} from 'diacritics'
 
@@ -40,7 +41,13 @@ export function getValuesForKey (key, item) {
   return results.filter(r => typeof r === 'string' || typeof r === 'number')
 }
 
-export function searchStrings (strings, term, {caseSensitive, fuzzy, sortResults, normalize} = {}) {
+interface searchStringsOptions {
+  caseSensitive?: boolean
+  fuzzy?: boolean
+  sortResults?: boolean
+  normalize?: boolean
+}
+export function searchStrings (strings: string[], term:string, {caseSensitive, fuzzy, sortResults, normalize}: searchStringsOptions = {}) {
   strings = strings.map(e => {
     const str = e.toString()
     return normalize && removeDiacritics(str) || str
@@ -48,9 +55,9 @@ export function searchStrings (strings, term, {caseSensitive, fuzzy, sortResults
 
   try {
     if (fuzzy) {
-      if (typeof strings.toJS === 'function') {
-        strings = strings.toJS()
-      }
+      // if (typeof strings.toJS === 'function') {
+      //   strings = strings.toJS()
+      // }
       const fuse = new Fuse(
         strings.map(s => { return {id: s} }),
         { keys: ['id'], id: 'id', caseSensitive, shouldSort: sortResults }
@@ -75,7 +82,10 @@ export function searchStrings (strings, term, {caseSensitive, fuzzy, sortResults
   }
 }
 
-export function createFilter (term, keys, options = {}) {
+export function createFilter (
+  term: string,
+  keys: SearchInputFilterKeys,
+  options: any = {}) {
   return (item) => {
     if (term === '') { return true }
 

@@ -1,15 +1,37 @@
 import PropTypes from 'prop-types'
-import React, { Component } from 'react'
+import * as React from 'react'
 import {
   Keyboard,
   TextInput,
   TouchableOpacity,
-  View
+  View,
+  TextInputProps
 } from 'react-native'
 
 import { createFilter } from './util';
 
-export default class SearchInput extends Component {
+export type SearchInputFilterKeys = string | string[]
+
+export interface SearchInputProps extends TextInputProps {
+  caseSensitive?: boolean;
+  clearIcon?: React.ReactNode;
+  clearIconViewStyles?: Object;
+  filterKeys?: SearchInputFilterKeys;
+  fuzzy?: boolean;
+  inputFocus?: boolean;
+  inputViewStyles?: Object;
+  onChange?: (...args: any[]) => any;
+  onSubmitEditing?: (...args: any[]) => any;
+  sortResults?: boolean;
+  throttle?: number;
+  value?: string;
+}
+export interface SearchInputState  {
+  searchTerm: string
+  inputFocus?: boolean
+}
+
+export default class SearchInput extends React.Component<TextInputProps,SearchInputState> {
   static defaultProps = {
     caseSensitive: false,
     clearIcon: null,
@@ -134,7 +156,6 @@ SearchInput.propTypes = {
   caseSensitive: PropTypes.bool,
   clearIcon: PropTypes.node,
   clearIconViewStyles: PropTypes.object,
-  filterKeys: PropTypes.oneOf([PropTypes.string, PropTypes.arrayOf(PropTypes.string)]),
   fuzzy: PropTypes.bool,
   inputFocus: PropTypes.bool,
   inputViewStyles: PropTypes.object,
